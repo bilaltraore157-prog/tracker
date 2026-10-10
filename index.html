@@ -1,0 +1,706 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mon Tracker de Paris - Basket & Hockey</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap');
+        
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', sans-serif; -webkit-tap-highlight-color: transparent; }
+        body {
+            background-color: #0a0c14; color: #ffffff; display: flex; justify-content: center;
+            padding: 15px; min-height: 100vh;
+            background-image: radial-gradient(circle at 50% 0%, #1a1e30 0%, #0a0c14 70%);
+        }
+        
+        .app-container { width: 100%; max-width: 480px; display: flex; flex-direction: column; gap: 15px; }
+        
+        /* ========== HEADER ========== */
+        .header { display: flex; flex-direction: column; align-items: center; padding: 10px 0; }
+        .header h1 { color: #FFD700; font-size: 22px; font-weight: 900; letter-spacing: 1px; display: flex; align-items: center; gap: 10px; }
+        .header h1 span { font-size: 26px; }
+        .header .subtitle { font-size: 10px; color: #6b7280; letter-spacing: 2px; text-transform: uppercase; margin-top: 4px; }
+        
+        /* ========== CARTES ========== */
+        .card {
+            background-color: #131726; border-radius: 20px; padding: 20px; border: 1px solid #1f2538;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.4); position: relative; overflow: hidden;
+        }
+        .card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px; background: linear-gradient(90deg, transparent, rgba(255,215,0,0.3), transparent); }
+        .card-title { font-size: 16px; font-weight: 800; text-align: center; margin-bottom: 15px; display: flex; justify-content: center; align-items: center; gap: 8px; }
+        
+        /* ========== DASHBOARD ========== */
+        .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px; }
+        .stat-box {
+            background-color: #0a0c14; border: 1px solid #1f2538; border-radius: 14px;
+            padding: 15px; text-align: center; position: relative; overflow: hidden;
+        }
+        .stat-box.total { border-color: rgba(255, 215, 0, 0.3); }
+        .stat-box.win { border-color: rgba(34, 197, 94, 0.3); }
+        .stat-box.loss { border-color: rgba(239, 68, 68, 0.3); }
+        .stat-box.rate { border-color: rgba(255, 215, 0, 0.3); }
+        
+        .stat-icon { font-size: 20px; margin-bottom: 6px; display: block; }
+        .stat-value { font-size: 28px; font-weight: 900; line-height: 1; margin-bottom: 4px; }
+        .stat-box.total .stat-value { color: #FFD700; }
+        .stat-box.win .stat-value { color: #22c55e; }
+        .stat-box.loss .stat-value { color: #ef4444; }
+        .stat-box.rate .stat-value { color: #FFD700; font-size: 32px; }
+        .stat-label { font-size: 10px; color: #6b7280; text-transform: uppercase; letter-spacing: 1px; font-weight: 700; }
+        
+        /* ========== PROGRESSION VERS 100 ========== */
+        .progress-section { margin-top: 5px; }
+        .progress-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+        .progress-header .label { font-size: 11px; color: #6b7280; text-transform: uppercase; letter-spacing: 1px; font-weight: 700; }
+        .progress-header .count { font-size: 13px; font-weight: 800; color: #FFD700; }
+        .progress-track { height: 12px; background-color: #0a0c14; border-radius: 6px; overflow: hidden; border: 1px solid #1f2538; position: relative; }
+        .progress-fill { height: 100%; background: linear-gradient(90deg, #FFD700, #FFA500); border-radius: 6px; transition: width 0.8s cubic-bezier(0.16, 1, 0.3, 1); position: relative; }
+        .progress-fill::after { content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent); animation: shimmerBar 2s linear infinite; }
+        @keyframes shimmerBar { 0% { transform: translateX(-100%); } 100% { transform: translateX(100%); } }
+        
+        /* ========== SÉRIES ========== */
+        .streak-box {
+            margin-top: 15px; padding: 12px 15px; border-radius: 12px;
+            display: flex; align-items: center; justify-content: center; gap: 10px;
+            font-size: 13px; font-weight: 800; border: 1px dashed;
+        }
+        .streak-box.win-streak { background-color: rgba(34, 197, 94, 0.1); color: #4ade80; border-color: rgba(34, 197, 94, 0.4); }
+        .streak-box.loss-streak { background-color: rgba(239, 68, 68, 0.1); color: #f87171; border-color: rgba(239, 68, 68, 0.4); }
+        .streak-box.none { display: none; }
+        
+        /* ========== PAR SPORT ========== */
+        .sport-stats { display: flex; flex-direction: column; gap: 10px; margin-top: 15px; }
+        .sport-row {
+            background-color: #0a0c14; border: 1px solid #1f2538; border-radius: 12px;
+            padding: 12px 15px; display: flex; align-items: center; justify-content: space-between;
+        }
+        .sport-row .sport-name { font-size: 13px; font-weight: 700; display: flex; align-items: center; gap: 6px; }
+        .sport-row .sport-percent { font-size: 16px; font-weight: 900; }
+        .sport-row.basket .sport-percent { color: #FFD700; }
+        .sport-row.hockey .sport-percent { color: #60a5fa; }
+        .sport-row .sport-detail { font-size: 11px; color: #6b7280; font-weight: 600; margin-top: 2px; }
+        
+        /* ========== STATS PAR CHAMPIONNAT ========== */
+        .leagues-section { margin-top: 15px; padding-top: 15px; border-top: 1px solid #1f2538; }
+        .leagues-title {
+            font-size: 11px; font-weight: 800; color: #FFD700; text-transform: uppercase;
+            letter-spacing: 1.5px; margin-bottom: 12px; text-align: center;
+            display: flex; align-items: center; justify-content: center; gap: 6px;
+        }
+        .leagues-list { display: flex; flex-direction: column; gap: 8px; }
+        .league-row {
+            background-color: #0a0c14; border: 1px solid #1f2538; border-radius: 10px;
+            padding: 10px 12px; display: flex; align-items: center; justify-content: space-between;
+            transition: all 0.2s;
+        }
+        .league-row:hover { border-color: rgba(255, 215, 0, 0.3); }
+        .league-row .league-info { display: flex; align-items: center; gap: 8px; flex: 1; min-width: 0; }
+        .league-row .league-icon { font-size: 16px; flex-shrink: 0; }
+        .league-row .league-name { font-size: 12px; font-weight: 700; color: #fff; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .league-row .league-detail { font-size: 10px; color: #6b7280; font-weight: 600; margin-top: 2px; }
+        .league-row .league-percent { font-size: 15px; font-weight: 900; flex-shrink: 0; padding-left: 10px; }
+        .league-row.high-rate .league-percent { color: #22c55e; }
+        .league-row.mid-rate .league-percent { color: #FFD700; }
+        .league-row.low-rate .league-percent { color: #ef4444; }
+        
+        /* ========== BOUTONS AJOUTER ========== */
+        .add-section { display: flex; gap: 10px; }
+        .btn-add {
+            flex: 1; padding: 18px; border: none; border-radius: 14px; cursor: pointer;
+            font-size: 14px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.5px;
+            transition: all 0.2s; display: flex; flex-direction: column; align-items: center; gap: 5px;
+            color: #000;
+        }
+        .btn-add .btn-icon { font-size: 22px; }
+        .btn-add .btn-label { font-size: 12px; }
+        .btn-add.basket { background: linear-gradient(135deg, #FFD700 0%, #e6c200 100%); }
+        .btn-add.hockey { background: linear-gradient(135deg, #60a5fa 0%, #3b82f6 100%); color: #fff; }
+        .btn-add:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(255, 215, 0, 0.25); }
+        .btn-add:active { transform: scale(0.98); }
+        .btn-add:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+        
+        /* ========== LISTE DES PARIS ========== */
+        .filter-tabs { display: flex; gap: 8px; margin-bottom: 15px; background-color: #0a0c14; padding: 5px; border-radius: 12px; border: 1px solid #1f2538; }
+        .filter-btn {
+            flex: 1; padding: 10px; border-radius: 8px; border: none; background: transparent;
+            color: #6b7280; font-weight: 700; font-size: 12px; cursor: pointer; transition: all 0.2s;
+        }
+        .filter-btn.active { background-color: #1f2538; color: #FFD700; }
+        
+        .bet-list { display: flex; flex-direction: column; gap: 8px; max-height: 500px; overflow-y: auto; padding-right: 5px; }
+        .bet-item {
+            background-color: #0a0c14; border: 1px solid #1f2538; border-radius: 12px;
+            padding: 12px 15px; display: flex; align-items: center; gap: 10px;
+            transition: all 0.2s;
+        }
+        .bet-item:hover { border-color: rgba(255, 215, 0, 0.3); }
+        .bet-item.win { border-left: 4px solid #22c55e; }
+        .bet-item.loss { border-left: 4px solid #ef4444; }
+        
+        .bet-number {
+            font-size: 11px; font-weight: 800; color: #6b7280;
+            background-color: #1f2538; padding: 4px 8px; border-radius: 6px;
+            min-width: 36px; text-align: center;
+        }
+        .bet-sport { font-size: 20px; }
+        .bet-info { flex: 1; min-width: 0; }
+        .bet-league { font-size: 10px; color: #FFD700; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 2px; }
+        .bet-status { font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; }
+        .bet-item.win .bet-status { color: #22c55e; }
+        .bet-item.loss .bet-status { color: #ef4444; }
+        .bet-date { font-size: 10px; color: #6b7280; font-weight: 600; margin-top: 2px; }
+        
+        .btn-delete-bet {
+            background-color: rgba(239, 68, 68, 0.1); color: #ef4444;
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            width: 34px; height: 34px; border-radius: 10px; cursor: pointer;
+            font-size: 14px; display: flex; align-items: center; justify-content: center;
+            transition: all 0.2s; flex-shrink: 0;
+        }
+        .btn-delete-bet:hover { background-color: #ef4444; color: #fff; }
+        
+        .empty-state { text-align: center; padding: 40px 20px; color: #6b7280; font-size: 13px; font-style: italic; line-height: 1.6; }
+        .empty-state .icon { font-size: 40px; margin-bottom: 10px; display: block; }
+        
+        /* ========== BOUTON RESET ========== */
+        .btn-reset {
+            width: 100%; padding: 12px; margin-top: 15px;
+            background-color: rgba(239, 68, 68, 0.1); color: #ef4444;
+            border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 12px;
+            font-size: 12px; font-weight: 700; cursor: pointer;
+            text-transform: uppercase; letter-spacing: 1px; transition: all 0.2s;
+        }
+        .btn-reset:hover { background-color: #ef4444; color: #fff; }
+        
+        /* ========== MODALE ========== */
+        #betModal {
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background-color: rgba(0,0,0,0.85); z-index: 9999;
+            align-items: center; justify-content: center; padding: 20px; overflow-y: auto;
+        }
+        #betModal .modal-content {
+            background-color: #131726; border: 1px solid #1f2538; border-radius: 20px;
+            padding: 25px; max-width: 400px; width: 100%; text-align: center;
+            animation: modalIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            max-height: 90vh; overflow-y: auto;
+        }
+        @keyframes modalIn { from { opacity: 0; transform: scale(0.9); } to { opacity: 1; transform: scale(1); } }
+        #betModal h3 { color: #FFD700; font-size: 18px; font-weight: 800; margin-bottom: 5px; }
+        #betModal .subtitle { color: #6b7280; font-size: 12px; margin-bottom: 20px; }
+        
+        .modal-step-title { 
+            font-size: 11px; font-weight: 800; color: #FFD700; text-transform: uppercase;
+            letter-spacing: 1px; margin-bottom: 10px; margin-top: 15px; text-align: left;
+        }
+        
+        .league-grid {
+            display: grid; grid-template-columns: 1fr 1fr; gap: 8px;
+            max-height: 250px; overflow-y: auto; padding-right: 5px;
+        }
+        .league-btn {
+            background-color: #0a0c14; border: 1px solid #1f2538; border-radius: 10px;
+            padding: 12px 8px; cursor: pointer; transition: all 0.2s;
+            color: #fff; font-size: 11px; font-weight: 700; text-align: center;
+            display: flex; flex-direction: column; align-items: center; gap: 3px;
+        }
+        .league-btn:hover { border-color: #FFD700; background-color: rgba(255, 215, 0, 0.05); }
+        .league-btn.selected { background-color: rgba(255, 215, 0, 0.15); border-color: #FFD700; color: #FFD700; }
+        .league-btn .flag { font-size: 16px; }
+        
+        .modal-buttons { display: flex; gap: 10px; margin-top: 10px; }
+        .modal-btn {
+            flex: 1; padding: 16px; border: none; border-radius: 12px;
+            font-size: 14px; font-weight: 900; cursor: pointer; text-transform: uppercase;
+            transition: all 0.2s; color: #fff;
+        }
+        .modal-btn.win { background: linear-gradient(135deg, #22c55e, #16a34a); }
+        .modal-btn.loss { background: linear-gradient(135deg, #ef4444, #dc2626); }
+        .modal-btn:hover { transform: translateY(-2px); }
+        .modal-btn:active { transform: scale(0.98); }
+        
+        .modal-cancel {
+            margin-top: 15px; background: transparent; border: none;
+            color: #6b7280; font-size: 13px; cursor: pointer; text-decoration: underline;
+        }
+        
+        .selected-league-display {
+            background-color: rgba(255, 215, 0, 0.1); border: 1px solid rgba(255, 215, 0, 0.3);
+            border-radius: 10px; padding: 10px; margin-bottom: 10px;
+            font-size: 12px; color: #FFD700; font-weight: 800;
+        }
+        
+        .hidden { display: none !important; }
+        
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #0a0c14; }
+        ::-webkit-scrollbar-thumb { background: #1f2538; border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: #FFD700; }
+    </style>
+</head>
+<body>
+
+<div class="app-container">
+
+    <!-- HEADER -->
+    <div class="header">
+        <h1><span>📊</span> MON TRACKER</h1>
+        <div class="subtitle">Suivi de paris • Basket & Hockey</div>
+    </div>
+
+    <!-- DASHBOARD -->
+    <div class="card">
+        <div class="card-title">📈 Tableau de Bord</div>
+        
+        <div class="stats-grid">
+            <div class="stat-box total">
+                <span class="stat-icon">🎯</span>
+                <div class="stat-value" id="statTotal">0</div>
+                <div class="stat-label">Total Paris</div>
+            </div>
+            <div class="stat-box win">
+                <span class="stat-icon">✅</span>
+                <div class="stat-value" id="statWins">0</div>
+                <div class="stat-label">Validés</div>
+            </div>
+            <div class="stat-box loss">
+                <span class="stat-icon">❌</span>
+                <div class="stat-value" id="statLosses">0</div>
+                <div class="stat-label">Perdus</div>
+            </div>
+            <div class="stat-box rate">
+                <span class="stat-icon">📊</span>
+                <div class="stat-value" id="statRate">0%</div>
+                <div class="stat-label">Taux de réussite</div>
+            </div>
+        </div>
+
+        <!-- PROGRESSION VERS 100 -->
+        <div class="progress-section">
+            <div class="progress-header">
+                <span class="label">Progression vers 100 paris</span>
+                <span class="count" id="progressCount">0/100</span>
+            </div>
+            <div class="progress-track">
+                <div class="progress-fill" id="progressFill" style="width: 0%;"></div>
+            </div>
+        </div>
+
+        <!-- SÉRIE -->
+        <div class="streak-box none" id="streakBox"></div>
+
+        <!-- STATS PAR SPORT -->
+        <div class="sport-stats" id="sportStats"></div>
+
+        <!-- STATS PAR CHAMPIONNAT -->
+        <div class="leagues-section hidden" id="leaguesSection">
+            <div class="leagues-title">🏆 Performance par championnat</div>
+            <div class="leagues-list" id="leaguesList"></div>
+        </div>
+    </div>
+
+    <!-- AJOUTER UN PARI -->
+    <div class="card">
+        <div class="card-title">➕ Ajouter un pari</div>
+        <div class="add-section">
+            <button class="btn-add basket" id="btnAddBasket" onclick="startAddBet('basket')">
+                <span class="btn-icon">🏀</span>
+                <span class="btn-label">Basket</span>
+            </button>
+            <button class="btn-add hockey" id="btnAddHockey" onclick="startAddBet('hockey')">
+                <span class="btn-icon">🏒</span>
+                <span class="btn-label">Hockey</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- LISTE DES PARIS -->
+    <div class="card">
+        <div class="card-title">📜 Historique des paris</div>
+        
+        <div class="filter-tabs">
+            <button class="filter-btn active" onclick="setFilter('all', event)">Tout</button>
+            <button class="filter-btn" onclick="setFilter('basket', event)">🏀 Basket</button>
+            <button class="filter-btn" onclick="setFilter('hockey', event)">🏒 Hockey</button>
+        </div>
+
+        <div class="bet-list" id="betList"></div>
+
+        <button class="btn-reset" onclick="resetAll()" id="btnReset" style="display: none;">🗑️ Tout effacer</button>
+    </div>
+
+</div>
+
+<!-- ================= MODALE DE SÉLECTION ================= -->
+<div id="betModal">
+    <div class="modal-content">
+        <h3>Ajouter un pari</h3>
+        <p class="subtitle" id="modalSportLabel">Basketball 🏀</p>
+        
+        <!-- ÉTAPE 1 : Choix du championnat -->
+        <div id="stepLeague">
+            <div class="modal-step-title">1️⃣ Choisir le championnat</div>
+            <div class="league-grid" id="leagueGrid"></div>
+            <button class="modal-cancel" onclick="closeModal()">Annuler</button>
+        </div>
+        
+        <!-- ÉTAPE 2 : Choix du résultat -->
+        <div id="stepResult" class="hidden">
+            <div class="modal-step-title">2️⃣ Résultat du pari</div>
+            <div class="selected-league-display" id="selectedLeagueDisplay"></div>
+            <div class="modal-buttons">
+                <button class="modal-btn win" onclick="confirmBet('win')">✅ Validé</button>
+                <button class="modal-btn loss" onclick="confirmBet('loss')">❌ Perdu</button>
+            </div>
+            <button class="modal-cancel" onclick="backToLeague()">⬅️ Changer de championnat</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    // ================= BASE DE DONNÉES DES CHAMPIONNATS =================
+    const LEAGUES = {
+        basket: [
+            { id: 'NBA', name: 'NBA', flag: '🇺🇸' },
+            { id: 'EUROLEAGUE', name: 'EuroLeague', flag: '🇪🇺' },
+            { id: 'ACB', name: 'Liga ACB', flag: '🇪🇸' },
+            { id: 'LBA', name: 'Lega Basket', flag: '🇮🇹' },
+            { id: 'BBL', name: 'BBL', flag: '🇩🇪' },
+            { id: 'LNB', name: 'LNB Pro A', flag: '🇫🇷' },
+            { id: 'GREEK', name: 'Greek League', flag: '🇬🇷' },
+            { id: 'TURKISH', name: 'Turkish League', flag: '🇹🇷' },
+            { id: 'VTB', name: 'VTB League', flag: '🇷🇺' },
+            { id: 'NBL', name: 'NBL', flag: '🇦🇺' },
+            { id: 'AUTRE_BASKET', name: 'Autre', flag: '🌍' }
+        ],
+        hockey: [
+            { id: 'NHL', name: 'NHL', flag: '🇺🇸' },
+            { id: 'KHL', name: 'KHL', flag: '🇷🇺' },
+            { id: 'SHL', name: 'SHL', flag: '🇸🇪' },
+            { id: 'LIIGA', name: 'Liiga', flag: '🇫🇮' },
+            { id: 'NL', name: 'National League', flag: '🇨🇭' },
+            { id: 'DEL', name: 'DEL', flag: '🇩🇪' },
+            { id: 'CZECH', name: 'Czech Extraliga', flag: '🇨🇿' },
+            { id: 'ICE', name: 'ICE League', flag: '🇦🇹' },
+            { id: 'AHL', name: 'AHL', flag: '🇺🇸' },
+            { id: 'MAGNUS', name: 'Ligue Magnus', flag: '🇫🇷' },
+            { id: 'AUTRE_HOCKEY', name: 'Autre', flag: '🌍' }
+        ]
+    };
+
+    // ================= STATE =================
+    let bets = [];
+    let currentFilter = 'all';
+    let pendingSport = null;
+    let pendingLeague = null;
+    let betCounter = 0;
+    const STORAGE_KEY = 'tracker_paris_v3';
+
+    // ================= INIT =================
+    function loadBets() {
+        const saved = localStorage.getItem(STORAGE_KEY);
+        if (saved) {
+            try { 
+                const data = JSON.parse(saved);
+                bets = data.bets || [];
+                betCounter = data.counter || bets.length;
+            } catch(e) { bets = []; betCounter = 0; }
+        }
+    }
+
+    function saveBets() {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify({ bets, counter: betCounter }));
+    }
+
+    // ================= AJOUTER UN PARI =================
+    window.startAddBet = function(sport) {
+        if (bets.length >= 100) {
+            alert("🎯 Tu as atteint les 100 paris ! Fais un reset pour recommencer.");
+            return;
+        }
+        pendingSport = sport;
+        pendingLeague = null;
+        
+        // Réinitialiser la modale
+        document.getElementById('stepLeague').classList.remove('hidden');
+        document.getElementById('stepResult').classList.add('hidden');
+        document.getElementById('modalSportLabel').textContent = sport === 'basket' ? 'Basketball 🏀' : 'Hockey sur Glace 🏒';
+        
+        // Afficher la grille des championnats
+        renderLeagueGrid();
+        document.getElementById('betModal').style.display = 'flex';
+    };
+
+    function renderLeagueGrid() {
+        const grid = document.getElementById('leagueGrid');
+        const leagues = LEAGUES[pendingSport];
+        
+        grid.innerHTML = leagues.map(league => `
+            <button class="league-btn" onclick="selectLeague('${league.id}', '${league.name}', '${league.flag}')">
+                <span class="flag">${league.flag}</span>
+                <span>${league.name}</span>
+            </button>
+        `).join('');
+    }
+
+    window.selectLeague = function(leagueId, leagueName, flag) {
+        pendingLeague = { id: leagueId, name: leagueName, flag: flag };
+        
+        // Passer à l'étape 2
+        document.getElementById('stepLeague').classList.add('hidden');
+        document.getElementById('stepResult').classList.remove('hidden');
+        document.getElementById('selectedLeagueDisplay').textContent = `${flag} ${leagueName}`;
+    };
+
+    window.backToLeague = function() {
+        document.getElementById('stepResult').classList.add('hidden');
+        document.getElementById('stepLeague').classList.remove('hidden');
+        pendingLeague = null;
+    };
+
+    window.closeModal = function() {
+        document.getElementById('betModal').style.display = 'none';
+        pendingSport = null;
+        pendingLeague = null;
+    };
+
+    window.confirmBet = function(result) {
+        if (!pendingSport || !pendingLeague) return;
+
+        betCounter++;
+        
+        const newBet = {
+            id: Date.now() + Math.random(),
+            number: betCounter,
+            sport: pendingSport,
+            league: pendingLeague,
+            result: result,
+            date: new Date().toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })
+        };
+
+        bets.unshift(newBet);
+        saveBets();
+        
+        // Fermer la modale
+        document.getElementById('betModal').style.display = 'none';
+        pendingSport = null;
+        pendingLeague = null;
+        
+        renderAll();
+    };
+
+    // ================= SUPPRIMER UN PARI =================
+    window.deleteBet = function(id) {
+        if (!confirm("Supprimer ce pari ?")) return;
+        bets = bets.filter(b => b.id !== id);
+        saveBets();
+        renderAll();
+    };
+
+    // ================= RESET =================
+    window.resetAll = function() {
+        if (!confirm("⚠️ Effacer TOUS les paris ? Cette action est irréversible.")) return;
+        bets = [];
+        betCounter = 0;
+        saveBets();
+        renderAll();
+    };
+
+    // ================= FILTRE =================
+    window.setFilter = function(filter, event) {
+        currentFilter = filter;
+        document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+        if (event && event.target) event.target.classList.add('active');
+        renderBetList();
+    };
+
+    // ================= CALCULS =================
+    function calculateStats() {
+        const total = bets.length;
+        const wins = bets.filter(b => b.result === 'win').length;
+        const losses = bets.filter(b => b.result === 'loss').length;
+        const rate = total > 0 ? Math.round((wins / total) * 100) : 0;
+        
+        const basketBets = bets.filter(b => b.sport === 'basket');
+        const basketWins = basketBets.filter(b => b.result === 'win').length;
+        const basketRate = basketBets.length > 0 ? Math.round((basketWins / basketBets.length) * 100) : 0;
+        
+        const hockeyBets = bets.filter(b => b.sport === 'hockey');
+        const hockeyWins = hockeyBets.filter(b => b.result === 'win').length;
+        const hockeyRate = hockeyBets.length > 0 ? Math.round((hockeyWins / hockeyBets.length) * 100) : 0;
+
+        // Calcul de la série
+        let streak = 0;
+        let streakType = null;
+        for (let i = 0; i < bets.length; i++) {
+            if (streakType === null) {
+                streakType = bets[i].result;
+                streak = 1;
+            } else if (bets[i].result === streakType) {
+                streak++;
+            } else {
+                break;
+            }
+        }
+
+        // Stats par championnat
+        const leagueStats = {};
+        bets.forEach(bet => {
+            const key = `${bet.sport}_${bet.league.id}`;
+            if (!leagueStats[key]) {
+                leagueStats[key] = {
+                    sport: bet.sport,
+                    league: bet.league,
+                    total: 0,
+                    wins: 0
+                };
+            }
+            leagueStats[key].total++;
+            if (bet.result === 'win') leagueStats[key].wins++;
+        });
+
+        // Convertir en tableau et trier par taux de réussite (décroissant)
+        const leagueArray = Object.values(leagueStats).map(l => ({
+            ...l,
+            rate: Math.round((l.wins / l.total) * 100)
+        })).sort((a, b) => b.rate - a.rate);
+
+        return {
+            total, wins, losses, rate,
+            basket: { total: basketBets.length, wins: basketWins, rate: basketRate },
+            hockey: { total: hockeyBets.length, wins: hockeyWins, rate: hockeyRate },
+            streak, streakType,
+            leagues: leagueArray
+        };
+    }
+
+    // ================= RENDER =================
+    function renderDashboard() {
+        const stats = calculateStats();
+        
+        document.getElementById('statTotal').textContent = stats.total;
+        document.getElementById('statWins').textContent = stats.wins;
+        document.getElementById('statLosses').textContent = stats.losses;
+        document.getElementById('statRate').textContent = stats.rate + '%';
+        
+        const progress = Math.min(stats.total, 100);
+        document.getElementById('progressCount').textContent = progress + '/100';
+        document.getElementById('progressFill').style.width = progress + '%';
+        
+        // Série
+        const streakBox = document.getElementById('streakBox');
+        if (stats.streak >= 3 && stats.streakType) {
+            if (stats.streakType === 'win') {
+                streakBox.className = 'streak-box win-streak';
+                streakBox.innerHTML = `🔥 ${stats.streak} victoires d'affilée !`;
+            } else {
+                streakBox.className = 'streak-box loss-streak';
+                streakBox.innerHTML = `😰 ${stats.streak} défaites d'affilée...`;
+            }
+        } else {
+            streakBox.className = 'streak-box none';
+        }
+        
+        // Stats par sport
+        document.getElementById('sportStats').innerHTML = `
+            <div class="sport-row basket">
+                <div>
+                    <div class="sport-name">🏀 Basket</div>
+                    <div class="sport-detail">${stats.basket.wins}/${stats.basket.total} paris réussis</div>
+                </div>
+                <div class="sport-percent">${stats.basket.rate}%</div>
+            </div>
+            <div class="sport-row hockey">
+                <div>
+                    <div class="sport-name">🏒 Hockey</div>
+                    <div class="sport-detail">${stats.hockey.wins}/${stats.hockey.total} paris réussis</div>
+                </div>
+                <div class="sport-percent">${stats.hockey.rate}%</div>
+            </div>
+        `;
+        
+        // Stats par championnat (Option B : seulement ceux utilisés)
+        const leaguesSection = document.getElementById('leaguesSection');
+        const leaguesList = document.getElementById('leaguesList');
+        
+        if (stats.leagues.length > 0) {
+            leaguesSection.classList.remove('hidden');
+            leaguesList.innerHTML = stats.leagues.map(l => {
+                const sportIcon = l.sport === 'basket' ? '🏀' : '🏒';
+                let rateClass = 'mid-rate';
+                if (l.rate >= 60) rateClass = 'high-rate';
+                else if (l.rate < 40) rateClass = 'low-rate';
+                
+                return `
+                    <div class="league-row ${rateClass}">
+                        <div class="league-info">
+                            <span class="league-icon">${sportIcon}</span>
+                            <div style="min-width: 0;">
+                                <div class="league-name">${l.league.flag} ${l.league.name}</div>
+                                <div class="league-detail">${l.wins}/${l.total} paris réussis</div>
+                            </div>
+                        </div>
+                        <div class="league-percent">${l.rate}%</div>
+                    </div>
+                `;
+            }).join('');
+        } else {
+            leaguesSection.classList.add('hidden');
+        }
+        
+        document.getElementById('btnReset').style.display = stats.total > 0 ? 'block' : 'none';
+        
+        const isMax = stats.total >= 100;
+        document.getElementById('btnAddBasket').disabled = isMax;
+        document.getElementById('btnAddHockey').disabled = isMax;
+    }
+
+    function renderBetList() {
+        const list = document.getElementById('betList');
+        let filtered = bets;
+        
+        if (currentFilter === 'basket') filtered = bets.filter(b => b.sport === 'basket');
+        else if (currentFilter === 'hockey') filtered = bets.filter(b => b.sport === 'hockey');
+        
+        if (filtered.length === 0) {
+            list.innerHTML = `
+                <div class="empty-state">
+                    <span class="icon">📝</span>
+                    Aucun pari enregistré.<br>
+                    Utilise les boutons ci-dessus pour ajouter ton premier pari !
+                </div>
+            `;
+            return;
+        }
+        
+        list.innerHTML = filtered.map((bet) => {
+            const sportIcon = bet.sport === 'basket' ? '🏀' : '🏒';
+            const statusText = bet.result === 'win' ? '✅ Validé' : '❌ Perdu';
+            
+            return `
+                <div class="bet-item ${bet.result}">
+                    <div class="bet-number">#${bet.number}</div>
+                    <div class="bet-sport">${sportIcon}</div>
+                    <div class="bet-info">
+                        <div class="bet-league">${bet.league.flag} ${bet.league.name}</div>
+                        <div class="bet-status">${statusText}</div>
+                        <div class="bet-date">${bet.date}</div>
+                    </div>
+                    <button class="btn-delete-bet" onclick="deleteBet(${bet.id})">🗑️</button>
+                </div>
+            `;
+        }).join('');
+    }
+
+    function renderAll() {
+        renderDashboard();
+        renderBetList();
+    }
+
+    // ================= START =================
+    loadBets();
+    renderAll();
+</script>
+
+</body>
+</html>
